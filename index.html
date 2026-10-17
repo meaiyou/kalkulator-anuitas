@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Anuitas - Kelompok 7</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 95vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      flex: 1;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    header h1 {
+      margin-bottom: 5px;
+      color: var(--primary);
+    }
+    .card {
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #64748b;
+    }
+    .btn-secondary:hover {
+      background-color: #475569;
+    }
+    .results {
+      padding: 15px;
+      background-color: #eff6ff;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .results p {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: right;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: var(--text);
+    }
+    th:first-child, td:first-child {
+      text-align: center;
+    }
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin-top: 15px;
+    }
+    /* Class untuk menyembunyikan halaman */
+    .hidden {
+      display: none;
+    }
+    /* Style Watermark / Footer */
+    footer {
+      text-align: center;
+      padding: 15px;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #64748b;
+      border-top: 1px dashed var(--border);
+    }
+    footer strong {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Kalkulator Anuitas</h1>
+    <p>Aplikasi Perhitungan & Simulasi Pelunasan Anuitas</p>
+  </header>
+
+  <!-- HALAMAN 1: FORM INPUT -->
+  <div id="pageInput" class="card">
+    <h3>Input Parameter Soal</h3>
+    
+    <div class="form-group">
+      <label for="satuan">Jenis Periode pada Soal:</label>
+      <select id="satuan" onchange="updateLabels()">
+        <option value="bulan">Bulanan (Bunga & Jangka Waktu per Bulan)</option>
+        <option value="tahun">Tahunan (Bunga & Jangka Waktu per Tahun)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="pinjaman">Besar Pinjaman / Modal Awal (M):</label>
+      <input type="number" id="pinjaman" value="10000000" placeholder="Masukkan jumlah pinjaman">
+    </div>
+
+    <div class="form-group">
+      <label for="bunga" id="labelBunga">Suku Bunga per Bulan (%):</label>
+      <input type="number" id="bunga" value="2" step="0.1" placeholder="Masukkan persen bunga">
+    </div>
+
+    <div class="form-group">
+      <label for="periode" id="labelPeriode">Lama Periode (Jumlah Bulan):</label>
+      <input type="number" id="periode" value="12" step="1" placeholder="Masukkan lama periode">
+    </div>
+
+    <button onclick="prosesHitung()">Hitung & Lihat Hasil ➔</button>
+  </div>
+
+  <!-- HALAMAN 2: HASIL PERHITUNGAN & TABEL -->
+  <div id="pageResult" class="hidden">
+    <div class="card">
+      <h3>Hasil Perhitungan</h3>
+      <div class="results">
+        <p><strong>Besar Anuitas (A):</strong> <span id="valAnuitas">-</span></p>
+        <p><strong>Total Pembayaran:</strong> <span id="valTotal">-</span></p>
+        <p><strong>Total Bunga:</strong> <span id="valTotalBunga">-</span></p>
+      </div>
+
+      <button class="btn-secondary" onclick="kembaliKeInput()">⬅ Kembali / Hitung Ulang</button>
+    </div>
+
+    <div class="card">
+      <h3>Grafik Bunga vs Angsuran</h3>
+      <div class="chart-container">
+        <canvas id="annuityChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Tabel Pelunasan Anuitas</h3>
+      <div style="overflow-x: auto;">
+        <table id="scheduleTable">
+          <thead>
+            <tr>
+              <th>Periode</th>
+              <th>Sisa Pinjaman Awal</th>
+              <th>Bunga</th>
+              <th>Angsuran Pokok</th>
+              <th>Anuitas (A)</th>
+              <th>Sisa Pinjaman Akhir</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WATERMARK KELOMPOK -->
+<footer>
+  Dibuat oleh <strong>Kelompok 7</strong>: Aira, Rakka, Lulu, Alifa, Nisrina
+</footer>
+
+<script>
+  let myChart = null;
+
+  function formatRupiah(val) {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val);
+  }
+
+  function updateLabels() {
+    const jenisSatuan = document.getElementById('satuan').value;
+    if (jenisSatuan === 'tahun') {
+      document.getElementById('labelBunga').innerText = "Suku Bunga per Tahun (%):";
+      document.getElementById('labelPeriode').innerText = "Lama Periode (Jumlah Tahun):";
+    } else {
+      document.getElementById('labelBunga').innerText = "Suku Bunga per Bulan (%):";
+      document.getElementById('labelPeriode').innerText = "Lama Periode (Jumlah Bulan):";
+    }
+  }
+
+  function prosesHitung() {
+    const jenisSatuan = document.getElementById('satuan').value;
+    const M = parseFloat(document.getElementById('pinjaman').value);
+    const rateInput = parseFloat(document.getElementById('bunga').value);
+    const periodeInput = parseInt(document.getElementById('periode').value);
+
+    if (isNaN(M) || isNaN(rateInput) || isNaN(periodeInput) || M <= 0 || rateInput <= 0 || periodeInput <= 0) {
+      alert("Mohon isi semua data input dengan benar!");
+      return;
+    }
+
+    const i = rateInput / 100;
+    const n = periodeInput;
+
+    // Rumus Anuitas
+    const A = M * (i / (1 - Math.pow(1 + i, -n)));
+    const totalPembayaran = A * n;
+    const totalBunga = totalPembayaran - M;
+
+    document.getElementById('valAnuitas').innerText = formatRupiah(A) + (jenisSatuan === 'tahun' ? ' / tahun' : ' / bulan');
+    document.getElementById('valTotal').innerText = formatRupiah(totalPembayaran);
+    document.getElementById('valTotalBunga').innerText = formatRupiah(totalBunga);
+
+    generateTableAndChart(M, i, n, A, jenisSatuan);
+
+    // Pindah Tampilan ke Halaman Hasil
+    document.getElementById('pageInput').classList.add('hidden');
+    document.getElementById('pageResult').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function kembaliKeInput() {
+    // Pindah Tampilan Kembali ke Halaman Input
+    document.getElementById('pageResult').classList.add('hidden');
+    document.getElementById('pageInput').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function generateTableAndChart(M, i, n, A, jenisSatuan) {
+    const tbody = document.querySelector('#scheduleTable tbody');
+    tbody.innerHTML = '';
+
+    let sisa = M;
+    const labels = [];
+    const dataBunga = [];
+    const dataAngsuran = [];
+
+    for (let period = 1; period <= n; period++) {
+      const bunga = sisa * i;
+      let angsuran = A - bunga;
+      
+      if (period === n) {
+        angsuran = sisa;
+      }
+      
+      const sisaAkhir = Math.max(0, sisa - angsuran);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${jenisSatuan === 'tahun' ? 'Thn' : 'Bln'} ${period}</td>
+        <td>${formatRupiah(sisa)}</td>
+        <td>${formatRupiah(bunga)}</td>
+        <td>${formatRupiah(angsuran)}</td>
+        <td>${formatRupiah(bunga + angsuran)}</td>
+        <td>${formatRupiah(sisaAkhir)}</td>
+      `;
+      tbody.appendChild(tr);
+
+      labels.push(`${jenisSatuan === 'tahun' ? 'Thn' : 'Bln'} ${period}`);
+      dataBunga.push(bunga.toFixed(2));
+      dataAngsuran.push(angsuran.toFixed(2));
+
+      sisa = sisaAkhir;
+    }
+
+    renderChart(labels, dataBunga, dataAngsuran);
+  }
+
+  function renderChart(labels, dataBunga, dataAngsuran) {
+    const ctx = document.getElementById('annuityChart').getContext('2d');
+    
+    if (myChart) {
+      myChart.destroy();
+    }
+
+    myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Angsuran Pokok',
+            data: dataAngsuran,
+            backgroundColor: '#2563eb'
+          },
+          {
+            label: 'Bunga',
+            data: dataBunga,
+            backgroundColor: '#f59e0b'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true }
+        }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
